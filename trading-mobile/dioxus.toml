@@ -1,0 +1,38 @@
+[application]
+name = "trading-mobile"
+default_platform = "ios"
+
+[web.app]
+title = "Trading Mobile"
+
+[web.watcher]
+watch_path = ["src"]
+reload_html = true
+index_on_404 = true
+
+[web.resource]
+style = [
+    "src/assets/styles.css",
+]
+
+[bundle]
+identifier = "com.trading.mobile"
+publisher = "Trading App"
+
+[bundle.macos]
+minimum_system_version = "10.15"
+
+[bundle.ios]
+deployment_target = "11.0"
+bundle_name = "Trading Mobile"
+bundle_display_name = "Trading Mobile"
+bundle_short_version = "1.0.0"
+bundle_version = "1"
+bundle_identifier = "com.trading.mobile"
+
+[bundle.android]
+app_name = "Trading Mobile"
+package_name = "com.trading.mobile"
+version_code = 1
+version_name = "1.0.0"
+minimum_sdk_version = 21

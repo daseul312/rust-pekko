@@ -1,0 +1,93 @@
+use stock_recommender::{
+    StockDatabaseActor, StockRecommendationEngine, 
+    StockRecommendationMessage, RecommendationRequest,
+    MarketConditions, EconomicOutlook, RiskLevel
+};
+use pekko_actor::{ActorSystem, Props};
+use tokio::time::{sleep, Duration};
+use tracing::{Level};
+use tracing_subscriber;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 로깅 초기화
+    tracing_subscriber::fmt()
+        .with_max_level(Level::INFO)
+        .init();
+
+    println!("=== 저위험 주식투자 종목 추천 시스템 ===\n");
+
+    // 액터 시스템 생성
+    let system = ActorSystem::new("stock-system");
+    
+    // 주식 데이터베이스 액터 생성
+    let database_actor = StockDatabaseActor::new();
+    let database_ref = system.spawn(Props::from_instance(database_actor), "database").await?;
+    
+    // 추천 엔진 액터 생성
+    let mut recommendation_engine = StockRecommendationEngine::new();
+    recommendation_engine.set_database_ref(database_ref.clone());
+    let recommendation_ref = system.spawn(Props::from_instance(recommendation_engine), "recommendation").await?;
+
+    sleep(Duration::from_millis(100)).await;
+
+    // 1. 저위험 주식 추천
+    println!("--- 저위험 주식 추천 ---");
+    recommendation_ref.tell(RecommendationRequest::GetLowRiskRecommendations).await?;
+    
+    sleep(Duration::from_millis(100)).await;
+
+    // 2. 섹터별 추천
+    println!("\n--- 섹터별 추천 ---");
+    let sectors = vec!["Healthcare", "Consumer Goods", "Technology"];
+    for sector in sectors {
+        println!("{} 섹터 추천:", sector);
+        recommendation_ref.tell(RecommendationRequest::GetSectorRecommendations(sector.to_string())).await?;
+        sleep(Duration::from_millis(50)).await;
+    }
+
+    // 3. 포트폴리오 추천
+    println!("\n--- 포트폴리오 추천 ---");
+    let investment_amounts = vec![10000.0, 50000.0, 100000.0];
+    let risk_levels = vec![RiskLevel::VeryLow, RiskLevel::Low];
+    
+    for amount in investment_amounts {
+        for risk_level in &risk_levels {
+            println!("투자금액: ${:.0}, 위험도: {:?}", amount, risk_level);
+            recommendation_ref.tell(RecommendationRequest::GetPortfolioRecommendation(risk_level.clone(), amount)).await?;
+            sleep(Duration::from_millis(50)).await;
+        }
+    }
+
+    // 4. 시장 조건 업데이트 및 재추천
+    println!("\n--- 시장 조건 변경 후 재추천 ---");
+    let bearish_conditions = MarketConditions {
+        market_volatility: 0.6,
+        interest_rate: 6.5,
+        economic_outlook: EconomicOutlook::Bearish,
+    };
+    
+    recommendation_ref.tell(RecommendationRequest::UpdateMarketConditions(bearish_conditions)).await?;
+    sleep(Duration::from_millis(50)).await;
+    
+    recommendation_ref.tell(RecommendationRequest::GetLowRiskRecommendations).await?;
+    sleep(Duration::from_millis(100)).await;
+
+    // 5. 개별 주식 정보 조회
+    println!("\n--- 개별 주식 정보 조회 ---");
+    let symbols = vec!["JNJ", "PG", "KO", "AAPL"];
+    for symbol in symbols {
+        database_ref.tell(StockRecommendationMessage::GetStockInfo(symbol.to_string())).await?;
+        sleep(Duration::from_millis(50)).await;
+    }
+
+    println!("\n=== 추천 시스템 시연 완료 ===");
+    println!("이 시스템은 Pekko 액터 모델을 사용하여:");
+    println!("1. 주식 데이터를 안전하게 관리");
+    println!("2. 시장 조건에 따른 동적 추천");
+    println!("3. 위험도 기반 포트폴리오 구성");
+    println!("4. 섹터별 맞춤형 추천");
+    println!("을 제공합니다.");
+
+    Ok(())
+}

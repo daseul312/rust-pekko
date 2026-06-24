@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 주식 자동매매 시스템</title>
+    <style>
+        /* 주식 자동매매 시스템 스타일 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 헤더 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .account-info {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* 네비게이션 */
+        .nav {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem 2rem;
+            display: flex;
+            gap: 1rem;
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .nav-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* 메인 콘텐츠 */
+        .main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            gap: 2rem;
+        }
+
+        /* 카드 */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        /* 통계 */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat span:first-child {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .stat span:last-child {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat .positive {
+            color: #28a745;
+        }
+
+        /* 보유 종목 */
+        .stocks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stock-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stock-header h3 {
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .change.positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .stock-info p {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* 자동매매 상태 */
+        .status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .status-item span:first-child {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .status-item span:last-child {
+            font-weight: 600;
+        }
+
+        .status-item .active {
+            color: #28a745;
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn.warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+            color: white;
+        }
+
+        .btn.info {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+            color: white;
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* 액션 버튼 */
+        .actions, .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* 거래 테이블 */
+        .trade-table {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .trade-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            align-items: center;
+        }
+
+        .trade-row.header {
+            background: rgba(102, 126, 234, 0.1);
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .trade-row:not(.header) {
+            background: rgba(255, 255, 255, 0.5);
+            transition: background 0.3s ease;
+        }
+
+        .trade-row:not(.header):hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .trade-row .success {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        /* 푸터 */
+        .footer {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .account-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .main {
+                padding: 1rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .stocks {
+                grid-template-columns: 1fr;
+            }
+            
+            .status {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions, .action-buttons {
+                flex-direction: column;
+            }
+            
+            .trade-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+                text-align: left;
+            }
+            
+            .trade-row span {
+                padding: 0.25rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>📈 주식 자동매매 시스템</h1>
+            <div class="account-info">
+                <span>💰 예수금: 339,574원</span>
+                <span>📈 일일손익: +8,400원</span>
+            </div>
+        </header>
+
+        <!-- 네비게이션 -->
+        <nav class="nav">
+            <button class="nav-btn active">🏠 대시보드</button>
+            <button class="nav-btn">📊 포트폴리오</button>
+            <button class="nav-btn">🤖 거래설정</button>
+            <button class="nav-btn">⚙️ 설정</button>
+        </nav>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main">
+            <!-- 계좌 요약 카드 -->
+            <section class="summary">
+                <div class="card">
+                    <h2>💰 계좌 요약</h2>
+                    <div class="stats">
+                        <div class="stat">
+                            <span>총 자산</span>
+                            <span>1,151,374원</span>
+                        </div>
+                        <div class="stat">
+                            <span>보유 종목</span>
+                            <span>2개</span>
+                        </div>
+                        <div class="stat">
+                            <span>일일 수익률</span>
+                            <span class="positive">+0.73%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 보유 종목 -->
+            <section class="holdings">
+                <h2>📊 보유 종목</h2>
+                <div class="stocks">
+                    <div class="stock-card">
+                        <div class="stock-header">
+                            <h3>기아 (000270)</h3>
+                            <span class="change positive">📈 +1.64%</span>
+                        </div>
+                        <div class="stock-info">
+                            <p>수량: 5주 | 평단가: 102,120원</p>
+                            <p>현재가: 103,800원 | 손익: +8,400원</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stock-card">
+                        <div class="stock-header">
+                            <h3>한국전력 (015760)</h3>
+                            <span class="change positive">📈 +4.52%</span>
+                        </div>
+                        <div class="stock-info">
+                            <p>수량: 8주 | 평단가: 37,650원</p>
+                            <p>현재가: 39,350원 | 손익: +13,600원</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 자동매매 상태 -->
+            <section class="trading">
+                <div class="card">
+                    <h2>🤖 자동매매 상태</h2>
+                    <div class="status">
+                        <div class="status-item">
+                            <span>상태: </span>
+                            <span class="active">▶️ 활성</span>
+                        </div>
+                        <div class="status-item">
+                            <span>목표 수익률: 3.0%</span>
+                        </div>
+                        <div class="status-item">
+                            <span>손절매: -2.0%</span>
+                        </div>
+                        <div class="status-item">
+                            <span>최대 포지션: 50%</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn warning">⏸️ 일시정지</button>
+                        <button class="btn danger">🛑 중지</button>
+                        <button class="btn primary">⚙️ 설정 변경</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 최근 거래 내역 -->
+            <section class="trades">
+                <div class="card">
+                    <h2>📋 최근 거래 내역</h2>
+                    <div class="trade-table">
+                        <div class="trade-row header">
+                            <span>시간</span>
+                            <span>종목</span>
+                            <span>구분</span>
+                            <span>수량</span>
+                            <span>가격</span>
+                            <span>상태</span>
+                        </div>
+                        <div class="trade-row">
+                            <span>15:23</span>
+                            <span>기아</span>
+                            <span>매수</span>
+                            <span>5주</span>
+                            <span>102,120원</span>
+                            <span class="success">체결</span>
+                        </div>
+                        <div class="trade-row">
+                            <span>14:45</span>
+                            <span>한국전력</span>
+                            <span>매수</span>
+                            <span>8주</span>
+                            <span>37,650원</span>
+                            <span class="success">체결</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 빠른 액션 -->
+            <section class="actions">
+                <h2>⚡ 빠른 액션</h2>
+                <div class="action-buttons">
+                    <button class="btn success">🔄 계좌 새로고침</button>
+                    <button class="btn info">📊 상세 차트</button>
+                    <button class="btn secondary">📝 노션 리포트</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- 푸터 -->
+        <footer class="footer">
+            <p>🚀 주식 자동매매 시스템 v1.0 | Made with Rust & Dioxus</p>
+        </footer>
+    </div>
+
+    <script>
+        // 간단한 인터랙션 추가
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(-2px)';
+                }, 100);
+            });
+        });
+
+        // 실시간 데이터 시뮬레이션
+        setInterval(() => {
+            const balance = document.querySelector('.account-info span:first-child');
+            const pnl = document.querySelector('.account-info span:last-child');
+            
+            // 가상의 데이터 업데이트
+            const currentBalance = 339574 + Math.floor(Math.random() * 1000 - 500);
+            const currentPnl = 8400 + Math.floor(Math.random() * 200 - 100);
+            
+            balance.textContent = `💰 예수금: ${currentBalance.toLocaleString()}원`;
+            pnl.textContent = `📈 일일손익: ${currentPnl >= 0 ? '+' : ''}${currentPnl.toLocaleString()}원`;
+        }, 3000);
+    </script>
+</body>
+</html>

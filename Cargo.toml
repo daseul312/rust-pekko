@@ -1,0 +1,44 @@
+[package]
+name = "pekko-rust"
+version = "0.1.0"
+edition = "2021"
+authors = ["Pekko Rust Contributors"]
+description = "A Rust implementation of the Apache Pekko actor system"
+license = "Apache-2.0"
+repository = "https://github.com/apache/pekko"
+
+[workspace]
+members = [
+    "coredb",
+    "pekko-actor",
+    "pekko-persistence",
+    "pekko-remoting",
+    "pekko-streams",
+    "pekko-testkit",
+    "pekko-ml4t-system",
+    "stock",
+    "trading-mobile",
+    "pekko-event-bus",
+]
+
+[dependencies]
+async-trait = "0.1.89"
+pekko-actor = { path = "pekko-actor", optional = true }
+pekko-persistence = { path = "pekko-persistence", optional = true }
+pekko-remoting = { path = "pekko-remoting", optional = true }
+pekko-testkit = { path = "pekko-testkit", optional = true }
+coredb = { path = "./coredb", optional = true }
+tokio = { version = "1.47.1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+default = ["actor"]
+actor = ["pekko-actor"]
+persistence = ["pekko-persistence"]
+remoting = ["pekko-remoting"]
+testkit = ["pekko-testkit"]
+coredb = ["dep:coredb"]
+full = ["actor", "persistence", "remoting", "testkit", "coredb"]

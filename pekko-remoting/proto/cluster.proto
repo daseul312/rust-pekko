@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package pekko.cluster;
+
+import "google/protobuf/timestamp.proto";
+import "remoting.proto";
+
+// Cluster membership messages
+message ClusterMessage {
+    oneof message {
+        Gossip gossip = 1;
+        GossipStatus gossip_status = 2;
+        GossipEnvelope gossip_envelope = 3;
+        Welcome welcome = 4;
+        InitJoin init_join = 5;
+        InitJoinAck init_join_ack = 6;
+        InitJoinNack init_join_nack = 7;
+        ExitingConfirmed exiting_confirmed = 8;
+    }
+}
+
+// Gossip protocol for cluster state
+message Gossip {
+    repeated UniqueAddress overview = 1;
+    map<string, uint64> version = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message GossipStatus {
+    UniqueAddress from = 1;
+    map<string, uint64> version = 2;
+}
+
+message GossipEnvelope {
+    UniqueAddress from = 1;
+    UniqueAddress to = 2;
+    bytes serialized_gossip = 3;
+}
+
+// Node information
+message UniqueAddress {
+    pekko.remoting.RemoteAddress address = 1;
+    int64 uid = 2;
+}
+
+message Member {
+    UniqueAddress unique_address = 1;
+    repeated string roles = 2;
+    MemberStatus status = 3;
+    uint32 uptime = 4;
+}
+
+enum MemberStatus {
+    JOINING = 0;
+    UP = 1;
+    LEAVING = 2;
+    EXITING = 3;
+    DOWN = 4;
+    REMOVED = 5;
+}
+
+// Cluster events
+message ClusterEvent {
+    oneof event {
+        MemberJoined member_joined = 1;
+        MemberUp member_up = 2;
+        MemberLeft member_left = 3;
+        MemberExited member_exited = 4;
+        MemberDown member_down = 5;
+        MemberRemoved member_removed = 6;
+        LeaderChanged leader_changed = 7;
+        RoleLeaderChanged role_leader_changed = 8;
+        ClusterShuttingDown cluster_shutting_down = 9;
+    }
+}
+
+message MemberJoined {
+    Member member = 1;
+}
+
+message MemberUp {
+    Member member = 1;
+}
+
+message MemberLeft {
+    Member member = 1;
+}
+
+message MemberExited {
+    Member member = 1;
+}
+
+message MemberDown {
+    Member member = 1;
+}
+
+message MemberRemoved {
+    Member member = 1;
+    MemberStatus previous_status = 2;
+}
+
+message LeaderChanged {
+    UniqueAddress leader = 1;
+}
+
+message RoleLeaderChanged {
+    string role = 1;
+    UniqueAddress leader = 2;
+}
+
+message ClusterShuttingDown {
+    // Empty for now
+}
+
+// Join protocol
+message Welcome {
+    UniqueAddress from = 1;
+    Gossip gossip = 2;
+}
+
+message InitJoin {
+    repeated string roles = 1;
+}
+
+message InitJoinAck {
+    pekko.remoting.RemoteAddress address = 1;
+}
+
+message InitJoinNack {
+    pekko.remoting.RemoteAddress address = 1;
+}
+
+message ExitingConfirmed {
+    UniqueAddress address = 1;
+}
+
+// Failure detection
+message HeartBeat {
+    pekko.remoting.RemoteAddress from = 1;
+    int64 sequence_nr = 2;
+    google.protobuf.Timestamp creation_time = 3;
+}
+
+message HeartBeatRsp {
+    UniqueAddress from = 1;
+    int64 sequence_nr = 2;
+    google.protobuf.Timestamp creation_time = 3;
+}

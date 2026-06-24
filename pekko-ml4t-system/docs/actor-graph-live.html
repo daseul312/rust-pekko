@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pekko-Rust Actor System - Live Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .header h1 {
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            background: rgba(255,255,255,0.1);
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.connected {
+            background: #44ff44;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        #cy {
+            width: 100%;
+            height: calc(100vh - 200px);
+            background: radial-gradient(circle at center, rgba(30,30,60,0.8) 0%, rgba(15,15,35,0.9) 100%);
+        }
+        .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 25px;
+            background: rgba(0,0,0,0.4);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+        .stats {
+            display: flex;
+            gap: 25px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        .stat-label {
+            font-size: 0.7em;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+        .info-panel {
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            width: 300px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 12px;
+            padding: 20px;
+            display: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .info-panel.active {
+            display: block;
+        }
+        .info-panel h3 {
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-panel p {
+            font-size: 0.85em;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        .info-panel .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+        }
+        .message-log {
+            position: fixed;
+            left: 20px;
+            bottom: 80px;
+            width: 320px;
+            max-height: 300px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        .message-log h4 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #4fc3f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .message-list {
+            max-height: 240px;
+            overflow-y: auto;
+            font-size: 0.75em;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        .message-item {
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            gap: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .message-time {
+            color: #888;
+            flex-shrink: 0;
+        }
+        .message-from {
+            color: #4ecdc4;
+            flex-shrink: 0;
+        }
+        .message-arrow {
+            color: #666;
+        }
+        .message-to {
+            color: #ff6b6b;
+            flex-shrink: 0;
+        }
+        .message-type {
+            color: #ffe66d;
+            flex-grow: 1;
+            text-align: right;
+        }
+        .controls {
+            position: fixed;
+            right: 20px;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .controls button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .controls button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .controls button.active {
+            background: #4fc3f7;
+            color: #000;
+        }
+        /* Node animation classes */
+        @keyframes nodeBlink {
+            0% { opacity: 1; }
+            25% { opacity: 0.3; }
+            50% { opacity: 1; }
+            75% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        @keyframes nodeGlow {
+            0% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
+            50% { box-shadow: 0 0 30px rgba(79, 195, 247, 0.8); }
+            100% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
+        }
+        @keyframes edgePulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦀 Pekko-Rust Live Monitor</h1>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+    
+    <div id="cy"></div>
+    
+    <div class="bottom-bar">
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff6b6b;"></div>
+                <span>Core</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4ecdc4;"></div>
+                <span>Data</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffe66d;"></div>
+                <span>Analysis</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #95e1d3;"></div>
+                <span>Trading</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #a29bfe;"></div>
+                <span>Infra</span>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="msgCount">0</div>
+                <div class="stat-label">Messages</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="msgRate">0</div>
+                <div class="stat-label">msg/s</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeActors">0</div>
+                <div class="stat-label">Active</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <h3><span id="infoIcon">📦</span> <span id="infoTitle">Actor Info</span></h3>
+        <p id="infoDesc"></p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="badge" id="infoBadge" style="background: #4fc3f7;"></div>
+            <div style="font-size: 0.8em; opacity: 0.7;">
+                <span id="infoMsgCount">0</span> messages
+            </div>
+        </div>
+    </div>
+
+    <div class="message-log">
+        <h4>
+            📨 Message Flow
+            <button onclick="clearMessages()" style="background: none; border: none; color: #888; cursor: pointer; font-size: 0.9em;">Clear</button>
+        </h4>
+        <div class="message-list" id="messageList"></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="toggleSimulation()" id="simBtn">▶️ Start Simulation</button>
+        <button onclick="connectWebSocket()" id="wsBtn">🔌 Connect WS</button>
+        <button onclick="cy.fit(50)">🔍 Fit View</button>
+        <button onclick="runLayout('cose')">🌐 Reorganize</button>
+    </div>
+
+    <script>
+        // Actor definitions
+        const actorData = {
+            nodes: [
+                { id: 'system', label: 'ActorSystem', type: 'infrastructure', icon: '⚙️',
+                  desc: 'Actor 시스템의 핵심. 모든 Actor의 생명주기를 관리합니다.' },
+                { id: 'news_collector', label: 'NewsCollector', type: 'data', icon: '📰',
+                  desc: 'NewsAPI, Alpha Vantage 등에서 실시간 뉴스를 수집합니다.' },
+                { id: 'data_agent', label: 'DataAgent', type: 'data', icon: '📊',
+                  desc: '시장 데이터 수집 및 관리. 가격, 거래량 등 시계열 데이터 처리.' },
+                { id: 'news_analyzer', label: 'NewsAnalyzer', type: 'analysis', icon: '🔍',
+                  desc: '키워드 기반 감성 분석, 투자 신호 생성. 50+ 금융 키워드 사전.' },
+                { id: 'ml_agent', label: 'MLAgent', type: 'analysis', icon: '🤖',
+                  desc: '머신러닝 기반 예측. 앙상블 모델로 가격 예측.' },
+                { id: 'sentiment_actor', label: 'Sentiment', type: 'analysis', icon: '😊',
+                  desc: '소셜 미디어, 뉴스 감성 분석 및 추이 추적.' },
+                { id: 'prediction_actor', label: 'Prediction', type: 'analysis', icon: '🎯',
+                  desc: '가격 예측 및 투자 의견 생성.' },
+                { id: 'persistent_trading', label: 'Trading\n(Persistent)', type: 'trading', icon: '💹',
+                  desc: 'Event Sourcing 기반 거래. PostgreSQL 저장, 자동 복구.' },
+                { id: 'risk_agent', label: 'RiskAgent', type: 'trading', icon: '🛡️',
+                  desc: '포트폴리오 리스크 관리. VaR 계산, 손절/익절.' },
+                { id: 'monitoring', label: 'Monitoring', type: 'infrastructure', icon: '📈',
+                  desc: '시스템 모니터링, 성능 메트릭, 알림.' },
+                { id: 'postgres', label: 'PostgreSQL', type: 'infrastructure', icon: '🗄️',
+                  desc: 'Event Sourcing 저장소. 이벤트 저널 및 스냅샷.' },
+                { id: 'llm_actor', label: 'LLM Analysis', type: 'analysis', icon: '🧠',
+                  desc: 'OpenAI/Grok 연동. 시장 분석 리포트 생성.' },
+            ],
+            edges: [
+                { source: 'system', target: 'news_collector' },
+                { source: 'system', target: 'news_analyzer' },
+                { source: 'system', target: 'persistent_trading' },
+                { source: 'system', target: 'data_agent' },
+                { source: 'system', target: 'ml_agent' },
+                { source: 'system', target: 'risk_agent' },
+                { source: 'system', target: 'monitoring' },
+                { source: 'news_collector', target: 'news_analyzer', msg: 'NewsArticle' },
+                { source: 'data_agent', target: 'ml_agent', msg: 'MarketData' },
+                { source: 'data_agent', target: 'sentiment_actor', msg: 'NewsData' },
+                { source: 'news_analyzer', target: 'persistent_trading', msg: 'Signal' },
+                { source: 'ml_agent', target: 'persistent_trading', msg: 'Prediction' },
+                { source: 'sentiment_actor', target: 'prediction_actor', msg: 'Sentiment' },
+                { source: 'prediction_actor', target: 'persistent_trading', msg: 'Signal' },
+                { source: 'llm_actor', target: 'prediction_actor', msg: 'Insight' },
+                { source: 'persistent_trading', target: 'postgres', msg: 'Event' },
+                { source: 'persistent_trading', target: 'risk_agent', msg: 'Order' },
+                { source: 'risk_agent', target: 'persistent_trading', msg: 'Approved' },
+                { source: 'persistent_trading', target: 'monitoring', msg: 'Metrics' },
+                { source: 'risk_agent', target: 'monitoring', msg: 'Alert' },
+            ]
+        };
+
+        const typeColors = {
+            'core': '#ff6b6b',
+            'data': '#4ecdc4',
+            'analysis': '#ffe66d',
+            'trading': '#95e1d3',
+            'infrastructure': '#a29bfe'
+        };
+
+        const typeIcons = {
+            'data': '📡',
+            'analysis': '🔬',
+            'trading': '💰',
+            'infrastructure': '⚙️'
+        };
+
+        // Create Cytoscape elements
+        const elements = {
+            nodes: actorData.nodes.map(n => ({
+                data: { 
+                    id: n.id, 
+                    label: n.label,
+                    desc: n.desc,
+                    type: n.type,
+                    icon: n.icon,
+                    msgCount: 0
+                }
+            })),
+            edges: actorData.edges.map((e, i) => ({
+                data: { 
+                    id: `e${i}`, 
+                    source: e.source, 
+                    target: e.target,
+                    msg: e.msg || ''
+                }
+            }))
+        };
+
+        // Initialize Cytoscape
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-size': '10px',
+                        'font-weight': 'bold',
+                        'color': '#000',
+                        'text-wrap': 'wrap',
+                        'text-max-width': '70px',
+                        'width': 80,
+                        'height': 80,
+                        'border-width': 3,
+                        'border-color': '#333',
+                        'background-color': '#666',
+                        'text-outline-color': '#fff',
+                        'text-outline-width': 1,
+                        'transition-property': 'background-color, border-color, border-width, width, height',
+                        'transition-duration': '0.2s'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'curve-style': 'bezier',
+                        'target-arrow-shape': 'triangle',
+                        'arrow-scale': 1,
+                        'line-color': '#444',
+                        'target-arrow-color': '#444',
+                        'opacity': 0.6,
+                        'transition-property': 'line-color, target-arrow-color, width, opacity',
+                        'transition-duration': '0.2s'
+                    }
+                },
+                {
+                    selector: 'node.highlight',
+                    style: {
+                        'border-width': 6,
+                        'border-color': '#fff',
+                        'width': 95,
+                        'height': 95
+                    }
+                },
+                {
+                    selector: 'edge.highlight',
+                    style: {
+                        'line-color': '#4fc3f7',
+                        'target-arrow-color': '#4fc3f7',
+                        'width': 4,
+                        'opacity': 1
+                    }
+                }
+            ],
+            layout: {
+                name: 'cose',
+                idealEdgeLength: 120,
+                nodeOverlap: 20,
+                padding: 40,
+                nodeRepulsion: 6000,
+                gravity: 50
+            }
+        });
+
+        // Apply colors
+        actorData.nodes.forEach(n => {
+            cy.getElementById(n.id).style('background-color', typeColors[n.type]);
+        });
+
+        // State
+        let isSimulating = false;
+        let simulationInterval = null;
+        let messageCount = 0;
+        let messageRate = 0;
+        let messageHistory = [];
+        let wsConnection = null;
+        let actorMsgCounts = {};
+
+        // Blink animation for node
+        function blinkNode(nodeId, duration = 600) {
+            const node = cy.getElementById(nodeId);
+            if (!node.length) return;
+
+            // Update message count
+            actorMsgCounts[nodeId] = (actorMsgCounts[nodeId] || 0) + 1;
+            node.data('msgCount', actorMsgCounts[nodeId]);
+
+            // Highlight effect
+            node.addClass('highlight');
+            
+            // Flash animation using style changes
+            let flashes = 0;
+            const flashInterval = setInterval(() => {
+                if (flashes >= 3) {
+                    clearInterval(flashInterval);
+                    node.removeClass('highlight');
+                    return;
+                }
+                const currentOpacity = node.style('opacity');
+                node.style('opacity', currentOpacity === '1' ? '0.4' : '1');
+                flashes++;
+            }, 100);
+
+            setTimeout(() => {
+                node.style('opacity', '1');
+                node.removeClass('highlight');
+            }, duration);
+        }
+
+        // Animate edge (message flow)
+        function animateEdge(sourceId, targetId, msgType) {
+            const edge = cy.edges().filter(e => 
+                e.data('source') === sourceId && e.data('target') === targetId
+            );
+            
+            if (edge.length) {
+                edge.addClass('highlight');
+                setTimeout(() => edge.removeClass('highlight'), 400);
+            }
+
+            // Blink target node
+            setTimeout(() => blinkNode(targetId), 200);
+
+            // Log message
+            logMessage(sourceId, targetId, msgType);
+            
+            // Update stats
+            messageCount++;
+            messageHistory.push(Date.now());
+            updateStats();
+        }
+
+        // Log message to panel
+        function logMessage(from, to, type) {
+            const list = document.getElementById('messageList');
+            const time = new Date().toLocaleTimeString('ko-KR', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false 
+            });
+            
+            const item = document.createElement('div');
+            item.className = 'message-item';
+            item.innerHTML = `
+                <span class="message-time">${time}</span>
+                <span class="message-from">${from}</span>
+                <span class="message-arrow">→</span>
+                <span class="message-to">${to}</span>
+                <span class="message-type">${type}</span>
+            `;
+            
+            list.insertBefore(item, list.firstChild);
+            
+            // Keep only last 50 messages
+            while (list.children.length > 50) {
+                list.removeChild(list.lastChild);
+            }
+        }
+
+        function clearMessages() {
+            document.getElementById('messageList').innerHTML = '';
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('msgCount').textContent = messageCount;
+            
+            // Calculate rate (messages in last 5 seconds)
+            const now = Date.now();
+            messageHistory = messageHistory.filter(t => now - t < 5000);
+            messageRate = Math.round(messageHistory.length / 5 * 10) / 10;
+            document.getElementById('msgRate').textContent = messageRate.toFixed(1);
+            
+            // Active actors
+            const activeCount = Object.keys(actorMsgCounts).length;
+            document.getElementById('activeActors').textContent = activeCount;
+        }
+
+        // Simulation scenarios
+        const scenarios = [
+            { from: 'news_collector', to: 'news_analyzer', msg: 'NewsArticle' },
+            { from: 'news_analyzer', to: 'persistent_trading', msg: 'BuySignal' },
+            { from: 'data_agent', to: 'ml_agent', msg: 'MarketData' },
+            { from: 'ml_agent', to: 'persistent_trading', msg: 'Prediction' },
+            { from: 'persistent_trading', to: 'postgres', msg: 'SaveEvent' },
+            { from: 'persistent_trading', to: 'risk_agent', msg: 'CheckRisk' },
+            { from: 'risk_agent', to: 'persistent_trading', msg: 'Approved' },
+            { from: 'sentiment_actor', to: 'prediction_actor', msg: 'Score' },
+            { from: 'prediction_actor', to: 'persistent_trading', msg: 'Signal' },
+            { from: 'persistent_trading', to: 'monitoring', msg: 'Metrics' },
+            { from: 'llm_actor', to: 'prediction_actor', msg: 'Insight' },
+            { from: 'news_collector', to: 'news_analyzer', msg: 'NVDA News' },
+            { from: 'news_analyzer', to: 'persistent_trading', msg: 'SellSignal' },
+            { from: 'data_agent', to: 'sentiment_actor', msg: 'SocialData' },
+            { from: 'risk_agent', to: 'monitoring', msg: 'RiskAlert' },
+        ];
+
+        function simulateMessage() {
+            const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+            blinkNode(scenario.from);
+            animateEdge(scenario.from, scenario.to, scenario.msg);
+        }
+
+        function toggleSimulation() {
+            const btn = document.getElementById('simBtn');
+            if (isSimulating) {
+                clearTimeout(simulationInterval);
+                isSimulating = false;
+                btn.textContent = '▶️ Start Simulation';
+                btn.classList.remove('active');
+            } else {
+                // 랜덤 간격으로 메시지 전송
+                function scheduleNext() {
+                    if (!isSimulating) return;
+                    simulateMessage();
+                    simulationInterval = setTimeout(scheduleNext, 600 + Math.random() * 800);
+                }
+                isSimulating = true;
+                btn.textContent = '⏹️ Stop Simulation';
+                btn.classList.add('active');
+                scheduleNext();
+            }
+        }
+
+        // WebSocket connection
+        function connectWebSocket() {
+            const wsUrl = 'ws://localhost:9090/actor-events';
+            const btn = document.getElementById('wsBtn');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                wsConnection.close();
+                return;
+            }
+
+            try {
+                wsConnection = new WebSocket(wsUrl);
+                
+                wsConnection.onopen = () => {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Connected';
+                    btn.textContent = '🔌 Disconnect';
+                    btn.classList.add('active');
+                    console.log('WebSocket connected');
+                };
+
+                wsConnection.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        // Expected format: { from: "actor_id", to: "actor_id", msg: "MessageType" }
+                        if (data.from && data.to) {
+                            blinkNode(data.from);
+                            animateEdge(data.from, data.to, data.msg || 'Message');
+                        } else if (data.actor) {
+                            // Simple actor activity
+                            blinkNode(data.actor);
+                        }
+                    } catch (e) {
+                        console.log('Message:', event.data);
+                    }
+                };
+
+                wsConnection.onclose = () => {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Disconnected';
+                    btn.textContent = '🔌 Connect WS';
+                    btn.classList.remove('active');
+                };
+
+                wsConnection.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    statusText.textContent = 'Error';
+                };
+            } catch (e) {
+                console.error('Failed to connect:', e);
+                statusText.textContent = 'Failed';
+            }
+        }
+
+        // Node click handler
+        cy.on('tap', 'node', function(evt) {
+            const node = evt.target;
+            const panel = document.getElementById('infoPanel');
+            
+            document.getElementById('infoIcon').textContent = node.data('icon') || '📦';
+            document.getElementById('infoTitle').textContent = node.data('label').replace('\n', ' ');
+            document.getElementById('infoDesc').textContent = node.data('desc');
+            document.getElementById('infoBadge').textContent = node.data('type').toUpperCase();
+            document.getElementById('infoBadge').style.background = typeColors[node.data('type')];
+            document.getElementById('infoBadge').style.color = node.data('type') === 'analysis' ? '#000' : '#fff';
+            document.getElementById('infoMsgCount').textContent = actorMsgCounts[node.id()] || 0;
+            
+            panel.classList.add('active');
+        });
+
+        cy.on('tap', function(evt) {
+            if (evt.target === cy) {
+                document.getElementById('infoPanel').classList.remove('active');
+            }
+        });
+
+        function runLayout(name) {
+            cy.layout({
+                name: name,
+                fit: true,
+                padding: 40,
+                animate: true,
+                animationDuration: 500,
+                nodeRepulsion: 6000
+            }).run();
+        }
+
+        // Initial layout
+        setTimeout(() => cy.fit(40), 500);
+
+        // Periodic stats update
+        setInterval(updateStats, 1000);
+
+        // 🚀 자동 시뮬레이션 시작!
+        setTimeout(() => {
+            toggleSimulation();
+            console.log('🎬 Auto-started simulation!');
+        }, 1000);
+    </script>
+</body>
+</html>

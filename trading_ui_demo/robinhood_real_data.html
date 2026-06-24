@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 Real Data Trading App</title>
+    <style>
+        /* Robinhood 스타일 디자인 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .app {
+            min-height: 100vh;
+            background: #000;
+        }
+
+        /* 헤더 */
+        .header {
+            background: #000;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00d4aa;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: #333;
+        }
+
+        /* 메인 콘텐츠 */
+        .main-content {
+            padding: 2rem 1.5rem;
+        }
+
+        /* 포트폴리오 섹션 */
+        .portfolio-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .portfolio-title {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .portfolio-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .daily-change {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .change-positive {
+            color: #00d4aa;
+        }
+
+        .change-negative {
+            color: #ff6b6b;
+        }
+
+        /* 보유 주식 카드 */
+        .stock-card {
+            background: #111;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: 1px solid #222;
+        }
+
+        .stock-card:hover {
+            background: #1a1a1a;
+        }
+
+        .stock-info {
+            flex: 1;
+        }
+
+        .stock-symbol {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .stock-name {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .stock-price {
+            text-align: right;
+        }
+
+        .stock-price-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .stock-change {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* 차트 영역 */
+        .chart-container {
+            height: 300px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        #stockChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 26, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top: 3px solid #00d4aa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 26, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff6b6b;
+            flex-direction: column;
+            gap: 1rem;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+
+        .retry-btn {
+            padding: 0.5rem 1rem;
+            background: #00d4aa;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .retry-btn:hover {
+            background: #00b894;
+        }
+
+        /* API 상태 표시 */
+        .api-status {
+            position: fixed;
+            top: 1rem;
+            right: 4rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            z-index: 9999;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.1rem;
+        }
+
+        .api-status span {
+            font-size: 0.6rem;
+        }
+
+        #currentTime {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+        }
+
+        #marketStatus {
+            font-weight: 600;
+        }
+
+        .api-status.market-open {
+            background: #28a745;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .api-status.market-closed {
+            background: #666;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+        }
+
+        .api-status.error {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        .api-status.loading {
+            background: #333;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- API 상태 표시 -->
+        <div class="api-status market-open" id="apiStatus">
+            <span id="currentTime">15:30:45</span>
+            <span id="marketStatus">거래중</span>
+        </div>
+
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="logo">📈 Real Trading App</div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="refreshData()">🔄</button>
+                <button class="icon-btn">👤</button>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main-content">
+            <!-- 포트폴리오 섹션 -->
+            <section class="portfolio-section">
+                <div class="portfolio-title">포트폴리오 가치</div>
+                <div class="portfolio-value" id="portfolioValue">₩1,151,374</div>
+                <div class="daily-change change-positive" id="dailyChange">
+                    <span>📈</span>
+                    <span>+₩22,000 (1.95%) 오늘</span>
+                </div>
+            </section>
+
+            <!-- 보유 주식 섹션 -->
+            <section class="holdings-section">
+                <h2 class="section-title">보유 주식</h2>
+                
+                <div class="stock-card" onclick="loadStockChart('기아', '000270')">
+                    <div class="stock-info">
+                        <div class="stock-symbol">기아</div>
+                        <div class="stock-name">000270 • 5주</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value" id="kiaPrice">₩103,800</div>
+                        <div class="stock-change change-positive" id="kiaChange">+1.64%</div>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="loadStockChart('삼성전자', '005930')">
+                    <div class="stock-info">
+                        <div class="stock-symbol">삼성전자</div>
+                        <div class="stock-name">005930 • 3주</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value" id="samsungPrice">₩95,000</div>
+                        <div class="stock-change change-negative" id="samsungChange">-0.52%</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 차트 영역 -->
+            <section class="chart-section">
+                <h2 class="section-title" id="chartTitle">실시간 차트 - 기아 (000270)</h2>
+                <div class="chart-container">
+                    <canvas id="stockChart" width="400" height="280"></canvas>
+                    <div class="loading" id="chartLoading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>실제 데이터 로딩 중...</span>
+                    </div>
+                    <div class="error" id="chartError" style="display: none;">
+                        <div>❌ 데이터를 불러올 수 없습니다</div>
+                        <button class="retry-btn" onclick="retryLoadChart()">다시 시도</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let currentStock = null;
+        let chartUpdateInterval = null;
+
+        // 현재 시간과 시장 상태 업데이트
+        function updateTimeAndMarketStatus() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ko-KR', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const currentMinutes = hour * 60 + minute;
+            
+            // 한국 시장 거래 시간: 09:00 ~ 15:30
+            const marketOpenMinutes = 9 * 60; // 09:00
+            const marketCloseMinutes = 15 * 60 + 30; // 15:30
+            
+            const statusEl = document.getElementById('apiStatus');
+            const timeEl = document.getElementById('currentTime');
+            const statusTextEl = document.getElementById('marketStatus');
+            
+            timeEl.textContent = timeString;
+            
+            if (currentMinutes >= marketOpenMinutes && currentMinutes <= marketCloseMinutes) {
+                // 시장 개장 시간
+                statusEl.className = 'api-status market-open';
+                statusTextEl.textContent = '거래중';
+            } else {
+                // 시장 폐장 시간
+                statusEl.className = 'api-status market-closed';
+                statusTextEl.textContent = '폐장';
+            }
+        }
+
+        // API 상태 업데이트 함수 (호환성 유지)
+        function updateApiStatus(status, message) {
+            const statusEl = document.getElementById('apiStatus');
+            if (status === 'success') {
+                statusEl.className = 'api-status market-open';
+                document.getElementById('marketStatus').textContent = '거래중';
+            } else if (status === 'error') {
+                statusEl.className = 'api-status error';
+                document.getElementById('marketStatus').textContent = '오류';
+            }
+        }
+
+        // 실제 주식 데이터 가져오기 (시뮬레이션)
+        async function fetchRealStockData(symbol) {
+            // 로딩 상태 표시하지 않음 (조용히 로딩)
+            
+            try {
+                // 실제로는 여기서 API 호출
+                // const response = await fetch(`https://api.example.com/stock/${symbol}`);
+                // const data = await response.json();
+                
+                // 시뮬레이션: 실제 API 응답처럼 보이는 데이터
+                await new Promise(resolve => setTimeout(resolve, 500)); // 로딩 시뮬레이션 (0.5초로 단축)
+                
+                const mockData = {
+                    symbol: symbol,
+                    price: generateRealisticPrice(symbol),
+                    change: generateRealisticChange(),
+                    chartData: generateRealisticChartData(symbol),
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                updateTimeAndMarketStatus();
+                return mockData;
+                
+            } catch (error) {
+                updateApiStatus('error', 'ERROR');
+                throw error;
+            }
+        }
+
+        // 실제 가격 생성 (종목별 기준가 기반)
+        function generateRealisticPrice(symbol) {
+            const basePrices = {
+                '000270': 103800, // 기아
+                '005930': 95000,  // 삼성전자
+                '035720': 59200,  // 카카오
+                '015760': 39350   // 한국전력
+            };
+            
+            const basePrice = basePrices[symbol] || 50000;
+            const variation = (Math.random() - 0.5) * basePrice * 0.02; // ±1% 변동
+            return Math.round(basePrice + variation);
+        }
+
+        // 실제 변화율 생성
+        function generateRealisticChange() {
+            // 정규분포에 가까운 변화율 생성
+            let change = 0;
+            for (let i = 0; i < 6; i++) {
+                change += (Math.random() - 0.5);
+            }
+            return change / 6; // -3% ~ +3% 범위
+        }
+
+        // 실제 차트 데이터 생성
+        function generateRealisticChartData(symbol) {
+            const basePrice = generateRealisticPrice(symbol);
+            const dataPoints = 50; // 50개 데이터 포인트
+            const data = [];
+            
+            for (let i = 0; i < dataPoints; i++) {
+                const timeOffset = i * 6; // 6분 간격
+                const time = new Date(Date.now() - (dataPoints - i) * 6 * 60 * 1000);
+                
+                // 랜덤 워크 시뮬레이션
+                const randomWalk = (Math.random() - 0.5) * basePrice * 0.001;
+                const price = basePrice + randomWalk + (Math.sin(i / 10) * basePrice * 0.005);
+                
+                data.push({
+                    time: time.toISOString(),
+                    price: Math.round(price),
+                    volume: Math.floor(Math.random() * 1000000) + 100000
+                });
+            }
+            
+            return data;
+        }
+
+        // 차트 그리기
+        function drawRealChart(chartData, stockName = '기아', stockSymbol = '000270') {
+            const canvas = document.getElementById('stockChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // 캔버스 초기화
+            ctx.clearRect(0, 0, width, height);
+            
+            if (!chartData || chartData.length === 0) {
+                showChartError();
+                return;
+            }
+            
+            // 가격 데이터 추출
+            const prices = chartData.map(d => d.price);
+            const volumes = chartData.map(d => d.volume);
+            
+            // 최소/최대값 계산
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            // 차트 영역 설정
+            const padding = 50;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            
+            // 변화율 계산
+            const firstPrice = prices[0];
+            const lastPrice = prices[prices.length - 1];
+            const change = ((lastPrice - firstPrice) / firstPrice) * 100;
+            const isPositive = change >= 0;
+            
+            // 그라디언트 생성
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, isPositive ? 'rgba(0, 212, 170, 0.1)' : 'rgba(255, 107, 107, 0.1)');
+            gradient.addColorStop(1, 'transparent');
+            
+            // 좌표 변환 함수
+            const getX = (index) => padding + (index / (prices.length - 1)) * chartWidth;
+            const getY = (price) => padding + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
+            
+            // 그리드 라인 그리기
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (i / 4) * chartHeight;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+            
+            // Y축 라벨
+            ctx.fillStyle = '#888';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const price = maxPrice - (i / 4) * priceRange;
+                const y = padding + (i / 4) * chartHeight + 4;
+                ctx.fillText(price.toLocaleString(), padding - 10, y);
+            }
+            
+            // 차트 라인 그리기
+            ctx.strokeStyle = isPositive ? '#00d4aa' : '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < prices.length; i++) {
+                const x = getX(i);
+                const y = getY(prices[i]);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // 차트 영역 채우기
+            ctx.fillStyle = gradient;
+            ctx.lineTo(width - padding, height - padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 주식명 표시
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${stockName} (${stockSymbol})`, padding, padding + 20);
+            
+            // 현재 가격 표시
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`₩${lastPrice.toLocaleString()}`, padding, padding + 40);
+            
+            // 변화량 표시
+            ctx.fillStyle = isPositive ? '#00d4aa' : '#ff6b6b';
+            ctx.font = '14px Arial';
+            const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            ctx.fillText(changeText, padding + 150, padding + 40);
+            
+            // 시간축
+            ctx.fillStyle = '#888';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('09:30', padding, height - 10);
+            ctx.fillText('12:00', padding + chartWidth / 2, height - 10);
+            ctx.fillText('15:30', width - padding, height - 10);
+            
+            // 볼륨 바 (하단)
+            const maxVolume = Math.max(...volumes);
+            ctx.fillStyle = isPositive ? 'rgba(0, 212, 170, 0.3)' : 'rgba(255, 107, 107, 0.3)';
+            
+            for (let i = 0; i < volumes.length; i++) {
+                const x = getX(i);
+                const volumeHeight = (volumes[i] / maxVolume) * 20;
+                ctx.fillRect(x - 1, height - padding - volumeHeight, 2, volumeHeight);
+            }
+        }
+
+        // 차트 로딩 표시
+        function showChartLoading() {
+            const loadingEl = document.getElementById('chartLoading');
+            const errorEl = document.getElementById('chartError');
+            const chartEl = document.getElementById('stockChart');
+            
+            loadingEl.style.display = 'flex';
+            errorEl.style.display = 'none';
+            chartEl.style.display = 'block'; // 차트는 유지하고 로딩 오버레이만 표시
+        }
+
+        // 차트 에러 표시
+        function showChartError() {
+            const loadingEl = document.getElementById('chartLoading');
+            const errorEl = document.getElementById('chartError');
+            const chartEl = document.getElementById('stockChart');
+            
+            loadingEl.style.display = 'none';
+            errorEl.style.display = 'flex';
+            chartEl.style.display = 'block'; // 차트는 유지
+        }
+
+        // 차트 표시
+        function showChart() {
+            const loadingEl = document.getElementById('chartLoading');
+            const errorEl = document.getElementById('chartError');
+            const chartEl = document.getElementById('stockChart');
+            
+            loadingEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            chartEl.style.display = 'block';
+        }
+
+        // 주식 차트 로드
+        async function loadStockChart(name, symbol) {
+            currentStock = { name, symbol };
+            
+            // 차트 제목 업데이트
+            updateChartTitle(name, symbol);
+            
+            // 로딩 화면 표시하지 않음 (조용히 로딩)
+            showChart();
+            
+            try {
+                const stockData = await fetchRealStockData(symbol);
+                drawRealChart(stockData.chartData, name, symbol);
+                
+                // 주식 가격 업데이트
+                updateStockPrice(symbol, stockData.price, stockData.change);
+                
+                // 실시간 업데이트 시작
+                startRealTimeUpdate(symbol);
+                
+            } catch (error) {
+                console.error('차트 로드 실패:', error);
+                showChartError();
+            }
+        }
+
+        // 차트 제목 업데이트
+        function updateChartTitle(name, symbol) {
+            const titleEl = document.getElementById('chartTitle');
+            if (titleEl) {
+                titleEl.textContent = `실시간 차트 - ${name} (${symbol})`;
+            }
+        }
+
+        // 주식 가격 업데이트
+        function updateStockPrice(symbol, price, change) {
+            const priceEl = document.getElementById(symbol === '000270' ? 'kiaPrice' : 'samsungPrice');
+            const changeEl = document.getElementById(symbol === '000270' ? 'kiaChange' : 'samsungChange');
+            
+            if (priceEl) priceEl.textContent = `₩${price.toLocaleString()}`;
+            if (changeEl) {
+                changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                changeEl.className = `stock-change ${change >= 0 ? 'change-positive' : 'change-negative'}`;
+            }
+        }
+
+        // 실시간 업데이트
+        function startRealTimeUpdate(symbol) {
+            if (chartUpdateInterval) {
+                clearInterval(chartUpdateInterval);
+            }
+            
+            chartUpdateInterval = setInterval(async () => {
+                try {
+                    const stockData = await fetchRealStockData(symbol);
+                    if (currentStock && currentStock.symbol === symbol) {
+                        drawRealChart(stockData.chartData, currentStock.name, currentStock.symbol);
+                        updateStockPrice(symbol, stockData.price, stockData.change);
+                    }
+                } catch (error) {
+                    console.error('실시간 업데이트 실패:', error);
+                }
+            }, 5000); // 5초마다 업데이트
+        }
+
+        // 데이터 새로고침
+        async function refreshData() {
+            if (currentStock) {
+                await loadStockChart(currentStock.name, currentStock.symbol);
+            }
+        }
+
+        // 차트 재시도
+        function retryLoadChart() {
+            if (currentStock) {
+                loadStockChart(currentStock.name, currentStock.symbol);
+            }
+        }
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            // 기본으로 기아 차트 로드
+            loadStockChart('기아', '000270');
+            
+            // 시간과 시장 상태 업데이트 시작
+            updateTimeAndMarketStatus();
+            setInterval(updateTimeAndMarketStatus, 1000);
+        });
+    </script>
+</body>
+</html>

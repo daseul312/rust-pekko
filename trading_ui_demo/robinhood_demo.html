@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 Robinhood Style Trading App</title>
+    <style>
+        /* Robinhood 스타일 디자인 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .app {
+            min-height: 100vh;
+            background: #000;
+        }
+
+        /* 헤더 - 미니멀한 디자인 */
+        .header {
+            background: #000;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00d4aa; /* Robinhood 민트 그린 */
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: #333;
+        }
+
+        /* 메인 콘텐츠 */
+        .main-content {
+            padding: 0;
+        }
+
+        /* 포트폴리오 섹션 */
+        .portfolio-section {
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .portfolio-title {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .portfolio-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .daily-change {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .change-positive {
+            color: #00d4aa;
+        }
+
+        .change-negative {
+            color: #ff6b6b;
+        }
+
+        /* 보유 주식 카드 */
+        .holdings-section {
+            padding: 0 1.5rem 2rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .stock-card {
+            background: #111;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: 1px solid #222;
+        }
+
+        .stock-card:hover {
+            background: #1a1a1a;
+        }
+
+        .stock-info {
+            flex: 1;
+        }
+
+        .stock-symbol {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .stock-name {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .stock-price {
+            text-align: right;
+        }
+
+        .stock-price-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .stock-change {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* 하단 네비게이션 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #000;
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: space-around;
+            padding: 0.75rem 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+            color: #888;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: #00d4aa;
+        }
+
+        .nav-item:hover {
+            background: #1a1a1a;
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* 주식 상세 모달 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            z-index: 2000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .modal-content {
+            background: #111;
+            width: 100%;
+            max-height: 80vh;
+            border-radius: 20px 20px 0 0;
+            padding: 2rem 1.5rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* 차트 영역 */
+        .chart-container {
+            height: 200px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        #stockChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-placeholder {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        /* 거래 버튼 */
+        .trade-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .trade-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .buy-btn {
+            background: #00d4aa;
+            color: #000;
+        }
+
+        .sell-btn {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        .trade-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* 거래 슬라이더 */
+        .trade-amount {
+            margin-bottom: 2rem;
+        }
+
+        .amount-label {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .amount-slider {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .amount-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00d4aa;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .amount-display {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        /* 스와이프 제출 버튼 */
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #00d4aa;
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            background: #00b894;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 게임화 애니메이션 */
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 3000;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #00d4aa;
+            animation: confetti-fall 3s ease-in-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* 탐색 화면 */
+        .explore-section {
+            padding: 2rem 1.5rem;
+            display: none;
+        }
+
+        .explore-section.active {
+            display: block;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 1rem;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar::placeholder {
+            color: #888;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .category-tab {
+            padding: 0.5rem 1rem;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 20px;
+            color: #888;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .category-tab.active {
+            background: #00d4aa;
+            color: #000;
+            border-color: #00d4aa;
+        }
+
+        /* 반응형 */
+        @media (max-width: 375px) {
+            .portfolio-value {
+                font-size: 2rem;
+            }
+            
+            .stock-card {
+                padding: 0.75rem;
+            }
+        }
+
+        /* 다크모드 (이미 다크모드이지만 추가 스타일링) */
+        .dark-mode {
+            background: #000;
+            color: #fff;
+        }
+
+        /* 스크롤바 스타일링 */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="logo">📈 TradeApp</div>
+            <div class="header-actions">
+                <button class="icon-btn">🔔</button>
+                <button class="icon-btn">👤</button>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main-content">
+            <!-- 포트폴리오 섹션 -->
+            <section class="portfolio-section">
+                <div class="portfolio-title">포트폴리오 가치</div>
+                <div class="portfolio-value" id="portfolioValue">₩1,151,374</div>
+                <div class="daily-change change-positive" id="dailyChange">
+                    <span>📈</span>
+                    <span>+₩22,000 (1.95%) 오늘</span>
+                </div>
+            </section>
+
+            <!-- 보유 주식 섹션 -->
+            <section class="holdings-section">
+                <h2 class="section-title">보유 주식</h2>
+                
+                <div class="stock-card" onclick="openStockDetail('기아', '000270', 103800, 1.64)">
+                    <div class="stock-info">
+                        <div class="stock-symbol">기아</div>
+                        <div class="stock-name">000270 • 5주</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value">₩103,800</div>
+                        <div class="stock-change change-positive">+1.64%</div>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="openStockDetail('한국전력', '015760', 39350, 4.52)">
+                    <div class="stock-info">
+                        <div class="stock-symbol">한국전력</div>
+                        <div class="stock-name">015760 • 8주</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value">₩39,350</div>
+                        <div class="stock-change change-positive">+4.52%</div>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="openStockDetail('삼성전자', '005930', 95000, -0.52)">
+                    <div class="stock-info">
+                        <div class="stock-symbol">삼성전자</div>
+                        <div class="stock-name">005930 • 3주</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value">₩95,000</div>
+                        <div class="stock-change change-negative">-0.52%</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 탐색 화면 -->
+            <section class="explore-section" id="exploreSection">
+                <input type="text" class="search-bar" placeholder="주식 검색...">
+                
+                <div class="category-tabs">
+                    <div class="category-tab active">인기</div>
+                    <div class="category-tab">테크</div>
+                    <div class="category-tab">금융</div>
+                    <div class="category-tab">에너지</div>
+                    <div class="category-tab">소비재</div>
+                </div>
+
+                <h2 class="section-title">인기 주식</h2>
+                
+                <div class="stock-card" onclick="openStockDetail('애플', 'AAPL', 185000, 2.15)">
+                    <div class="stock-info">
+                        <div class="stock-symbol">애플</div>
+                        <div class="stock-name">AAPL • 미국</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value">$185.00</div>
+                        <div class="stock-change change-positive">+2.15%</div>
+                    </div>
+                </div>
+
+                <div class="stock-card" onclick="openStockDetail('테슬라', 'TSLA', 245000, -1.23)">
+                    <div class="stock-info">
+                        <div class="stock-symbol">테슬라</div>
+                        <div class="stock-name">TSLA • 미국</div>
+                    </div>
+                    <div class="stock-price">
+                        <div class="stock-price-value">$245.00</div>
+                        <div class="stock-change change-negative">-1.23%</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 하단 네비게이션 -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="showSection('home')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">홈</div>
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('explore')">
+                <div class="nav-icon">🔍</div>
+                <div class="nav-label">탐색</div>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icon">📊</div>
+                <div class="nav-label">차트</div>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icon">💼</div>
+                <div class="nav-label">포트폴리오</div>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">계정</div>
+            </a>
+        </nav>
+
+        <!-- 주식 상세 모달 -->
+        <div class="modal" id="stockModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modalTitle">기아 (000270)</h3>
+                    <button class="close-btn" onclick="closeModal()">✕</button>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="stockChart" width="300" height="180"></canvas>
+                </div>
+
+                <div class="trade-buttons">
+                    <button class="trade-btn buy-btn">매수</button>
+                    <button class="trade-btn sell-btn">매도</button>
+                </div>
+
+                <div class="trade-amount">
+                    <div class="amount-label">거래 금액</div>
+                    <input type="range" class="amount-slider" min="10000" max="1000000" step="10000" value="100000" id="amountSlider">
+                    <div class="amount-display" id="amountDisplay">₩100,000</div>
+                </div>
+
+                <button class="submit-btn" onclick="submitTrade()">
+                    스와이프하여 거래 실행
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 실시간 데이터 업데이트
+        function updatePortfolio() {
+            const portfolioValue = document.getElementById('portfolioValue');
+            const dailyChange = document.getElementById('dailyChange');
+            
+            // 가상의 실시간 데이터
+            const baseValue = 1151374;
+            const change = Math.floor(Math.random() * 50000 - 25000);
+            const newValue = baseValue + change;
+            const changePercent = ((change / baseValue) * 100).toFixed(2);
+            
+            portfolioValue.textContent = `₩${newValue.toLocaleString()}`;
+            
+            if (change >= 0) {
+                dailyChange.className = 'daily-change change-positive';
+                dailyChange.innerHTML = `<span>📈</span><span>+₩${change.toLocaleString()} (+${changePercent}%) 오늘</span>`;
+            } else {
+                dailyChange.className = 'daily-change change-negative';
+                dailyChange.innerHTML = `<span>📉</span><span>₩${change.toLocaleString()} (${changePercent}%) 오늘</span>`;
+            }
+        }
+
+        // 3초마다 포트폴리오 업데이트
+        setInterval(updatePortfolio, 3000);
+
+        // 섹션 전환
+        function showSection(section) {
+            // 네비게이션 활성화
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.nav-item').classList.add('active');
+
+            // 섹션 표시/숨김
+            const exploreSection = document.getElementById('exploreSection');
+            const holdingsSection = document.querySelector('.holdings-section');
+            
+            if (section === 'explore') {
+                exploreSection.classList.add('active');
+                holdingsSection.style.display = 'none';
+            } else {
+                exploreSection.classList.remove('active');
+                holdingsSection.style.display = 'block';
+            }
+        }
+
+
+        // 차트 그리기 함수
+        function drawStockChart(stockName, currentPrice, change) {
+            const canvas = document.getElementById('stockChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // 캔버스 초기화
+            ctx.clearRect(0, 0, width, height);
+            
+            // 배경 그라디언트
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, change >= 0 ? 'rgba(0, 212, 170, 0.1)' : 'rgba(255, 107, 107, 0.1)');
+            gradient.addColorStop(1, change >= 0 ? 'rgba(0, 212, 170, 0)' : 'rgba(255, 107, 107, 0)');
+            
+            // 가상의 주가 데이터 생성 (최근 20개 데이터 포인트)
+            const dataPoints = 20;
+            const basePrice = currentPrice;
+            const prices = [];
+            
+            for (let i = 0; i < dataPoints; i++) {
+                const variation = (Math.random() - 0.5) * basePrice * 0.05; // ±2.5% 변동
+                const price = basePrice + variation;
+                prices.push(Math.max(price, basePrice * 0.9)); // 최소 90%까지만 하락
+            }
+            
+            // 마지막 가격을 현재 가격으로 설정
+            prices[dataPoints - 1] = currentPrice;
+            
+            // 최소/최대값 계산
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            // 차트 영역 설정
+            const padding = 40;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            
+            // X, Y 좌표 변환 함수
+            const getX = (index) => padding + (index / (dataPoints - 1)) * chartWidth;
+            const getY = (price) => padding + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
+            
+            // 그리드 라인 그리기
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            
+            // 수평 그리드 라인
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (i / 4) * chartHeight;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+            
+            // Y축 라벨
+            ctx.fillStyle = '#888';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const price = maxPrice - (i / 4) * priceRange;
+                const y = padding + (i / 4) * chartHeight + 4;
+                ctx.fillText(price.toFixed(0), padding - 10, y);
+            }
+            
+            // 차트 라인 그리기
+            ctx.strokeStyle = change >= 0 ? '#00d4aa' : '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < prices.length; i++) {
+                const x = getX(i);
+                const y = getY(prices[i]);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // 차트 영역 채우기 (그라디언트)
+            ctx.fillStyle = gradient;
+            ctx.lineTo(width - padding, height - padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 데이터 포인트 그리기
+            ctx.fillStyle = change >= 0 ? '#00d4aa' : '#ff6b6b';
+            for (let i = 0; i < prices.length; i++) {
+                const x = getX(i);
+                const y = getY(prices[i]);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            // 현재 가격 표시
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`₩${currentPrice.toLocaleString()}`, padding, padding + 20);
+            
+            // 변화량 표시
+            ctx.fillStyle = change >= 0 ? '#00d4aa' : '#ff6b6b';
+            ctx.font = '12px Arial';
+            const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            ctx.fillText(changeText, padding + 120, padding + 20);
+            
+            // 시간축 라벨 (간단한 예시)
+            ctx.fillStyle = '#888';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('9:30', padding, height - 5);
+            ctx.fillText('12:00', padding + chartWidth / 2, height - 5);
+            ctx.fillText('15:30', width - padding, height - 5);
+        }
+
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('stockModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 거래 금액 슬라이더
+        document.getElementById('amountSlider').addEventListener('input', function() {
+            const amount = parseInt(this.value);
+            document.getElementById('amountDisplay').textContent = `₩${amount.toLocaleString()}`;
+        });
+
+        // 거래 실행 (게임화 애니메이션)
+        function submitTrade() {
+            // 햅틱 피드백 시뮬레이션
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+
+            // 컨페티 애니메이션
+            createConfetti();
+            
+            // 성공 메시지
+            setTimeout(() => {
+                alert('🎉 거래가 성공적으로 실행되었습니다!');
+                closeModal();
+            }, 1000);
+        }
+
+        // 컨페티 애니메이션 생성
+        function createConfetti() {
+            const confettiContainer = document.createElement('div');
+            confettiContainer.className = 'confetti';
+            document.body.appendChild(confettiContainer);
+
+            const colors = ['#00d4aa', '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confettiContainer.appendChild(confetti);
+            }
+
+            setTimeout(() => {
+                confettiContainer.remove();
+            }, 3000);
+        }
+
+        // 카테고리 탭 전환
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 풀다운 새로고침 시뮬레이션
+        let startY = 0;
+        let currentY = 0;
+        let isRefreshing = false;
+
+        document.addEventListener('touchstart', function(e) {
+            if (window.scrollY === 0) {
+                startY = e.touches[0].clientY;
+            }
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            if (window.scrollY === 0 && !isRefreshing) {
+                currentY = e.touches[0].clientY;
+                const pullDistance = currentY - startY;
+                
+                if (pullDistance > 100) {
+                    // 새로고침 트리거
+                    isRefreshing = true;
+                    updatePortfolio();
+                    setTimeout(() => {
+                        isRefreshing = false;
+                    }, 1000);
+                }
+            }
+        });
+
+        // 실시간 차트 업데이트
+        let chartUpdateInterval;
+        
+        function startChartUpdate(name, basePrice, change) {
+            if (chartUpdateInterval) {
+                clearInterval(chartUpdateInterval);
+            }
+            
+            chartUpdateInterval = setInterval(() => {
+                const modal = document.getElementById('stockModal');
+                if (modal.classList.contains('active')) {
+                    // 가격에 작은 변동 추가
+                    const variation = (Math.random() - 0.5) * basePrice * 0.002; // ±0.1% 변동
+                    const newPrice = basePrice + variation;
+                    const newChange = change + (Math.random() - 0.5) * 0.1; // 변화량도 조금씩 변동
+                    
+                    drawStockChart(name, newPrice, newChange);
+                }
+            }, 2000); // 2초마다 업데이트
+        }
+        
+        function stopChartUpdate() {
+            if (chartUpdateInterval) {
+                clearInterval(chartUpdateInterval);
+                chartUpdateInterval = null;
+            }
+        }
+
+        // 주식 상세 모달 업데이트
+        function openStockDetail(name, symbol, price, change) {
+            const modal = document.getElementById('stockModal');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = `${name} (${symbol})`;
+            modal.classList.add('active');
+            
+            // 차트 그리기 및 실시간 업데이트 시작
+            setTimeout(() => {
+                drawStockChart(name, price, change);
+                startChartUpdate(name, price, change);
+            }, 100);
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('stockModal');
+            modal.classList.remove('active');
+            stopChartUpdate(); // 차트 업데이트 중지
+        }
+
+        // 초기 로드 시 포트폴리오 업데이트
+        updatePortfolio();
+    </script>
+</body>
+</html>

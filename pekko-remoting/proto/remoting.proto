@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package pekko.remoting;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// Main envelope for all remote messages
+message RemoteEnvelope {
+    RemoteActorRef recipient = 1;
+    RemoteActorRef sender = 2;
+    google.protobuf.Any message = 3;
+    string message_manifest = 4;
+    uint64 seq_no = 5;
+    google.protobuf.Timestamp timestamp = 6;
+    map<string, string> metadata = 7;
+}
+
+// Remote actor reference
+message RemoteActorRef {
+    string path = 1;
+    RemoteAddress address = 2;
+    string uid = 3;
+}
+
+// Remote address
+message RemoteAddress {
+    string protocol = 1;
+    string system = 2;
+    string hostname = 3;
+    uint32 port = 4;
+}
+
+// System messages for actor lifecycle
+message SystemMessage {
+    oneof message {
+        Create create = 1;
+        Recreate recreate = 2;
+        Suspend suspend = 3;
+        Resume resume = 4;
+        Terminate terminate = 5;
+        Supervise supervise = 6;
+        Watch watch = 7;
+        Unwatch unwatch = 8;
+        Failed failed = 9;
+        DeathWatchNotification death_watch = 10;
+    }
+}
+
+message Create {
+    google.protobuf.Any props = 1;
+    RemoteActorRef supervisor = 2;
+}
+
+message Recreate {
+    string cause = 1;
+}
+
+message Suspend {
+    // Empty for now
+}
+
+message Resume {
+    string caused_by_failure = 1;
+}
+
+message Terminate {
+    // Empty for now
+}
+
+message Supervise {
+    RemoteActorRef child = 1;
+    bool async = 2;
+}
+
+message Watch {
+    RemoteActorRef watchee = 1;
+    RemoteActorRef watcher = 2;
+}
+
+message Unwatch {
+    RemoteActorRef watchee = 1;
+    RemoteActorRef watcher = 2;
+}
+
+message Failed {
+    RemoteActorRef child = 1;
+    string cause = 2;
+    string stack_trace = 3;
+    google.protobuf.Timestamp timestamp = 4;
+}
+
+message DeathWatchNotification {
+    RemoteActorRef actor = 1;
+    bool existence_confirmed = 2;
+    bool address_terminated = 3;
+}
+
+// Control messages for connection management
+message ControlMessage {
+    oneof message {
+        HandshakeReq handshake_req = 1;
+        HandshakeRsp handshake_rsp = 2;
+        Heartbeat heartbeat = 3;
+        HeartbeatRsp heartbeat_rsp = 4;
+        Quarantine quarantine = 5;
+        DisassociateShuttingDown disassociate_shutting_down = 6;
+        DisassociateQuarantined disassociate_quarantined = 7;
+    }
+}
+
+message HandshakeReq {
+    RemoteAddress origin = 1;
+    uint64 uid = 2;
+    string cookie = 3;
+    map<string, string> extensions = 4;
+}
+
+message HandshakeRsp {
+    RemoteAddress origin = 1;
+    uint64 uid = 2;
+    bool success = 3;
+    string error_message = 4;
+}
+
+message Heartbeat {
+    uint64 seq_no = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message HeartbeatRsp {
+    uint64 seq_no = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message Quarantine {
+    RemoteAddress address = 1;
+    string reason = 2;
+}
+
+message DisassociateShuttingDown {
+    RemoteAddress address = 1;
+}
+
+message DisassociateQuarantined {
+    RemoteAddress address = 1;
+    string reason = 2;
+}
+
+// Connection-level handshake
+message Handshake {
+    string system_name = 1;
+    string actor_system_version = 2;
+    uint32 protocol_version = 3;
+    repeated string capabilities = 4;
+}
+
+message HandshakeAck {
+    string system_name = 1;
+    bool accepted = 2;
+    string reject_reason = 3;
+}

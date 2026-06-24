@@ -1,0 +1,776 @@
+/* Robinhood True UI/UX Implementation */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Robinhood True Colors */
+    --robinhood-green: #00C805;
+    --robinhood-green-light: #00E306;
+    --robinhood-green-dark: #00A004;
+    --robinhood-red: #FF5000;
+    --robinhood-red-light: #FF6B2B;
+    --robinhood-red-dark: #E04600;
+    --robinhood-black: #000000;
+    --robinhood-white: #FFFFFF;
+    --robinhood-gray-light: #F8F9FA;
+    --robinhood-gray: #E5E7EB;
+    --robinhood-gray-dark: #9CA3AF;
+    --robinhood-blue: #1DA1F2;
+    --robinhood-purple: #8B5CF6;
+    
+    /* Typography - Mobile First */
+    --font-size-tiny: 0.75rem;    /* 12px */
+    --font-size-small: 0.875rem;  /* 14px */
+    --font-size-base: 1rem;       /* 16px */
+    --font-size-large: 1.125rem;  /* 18px */
+    --font-size-xlarge: 1.5rem;   /* 24px */
+    --font-size-huge: 2rem;       /* 32px */
+    --font-size-massive: 3rem;    /* 48px */
+    
+    /* Spacing - Robinhood Scale */
+    --space-xs: 0.25rem;   /* 4px */
+    --space-sm: 0.5rem;    /* 8px */
+    --space-md: 1rem;      /* 16px */
+    --space-lg: 1.5rem;    /* 24px */
+    --space-xl: 2rem;      /* 32px */
+    --space-2xl: 3rem;     /* 48px */
+    --space-3xl: 4rem;     /* 64px */
+    
+    /* Border Radius - Robinhood Style */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 50px;
+    
+    /* Shadows - Minimal */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--robinhood-white);
+    color: var(--robinhood-black);
+    line-height: 1.4;
+    font-size: var(--font-size-base);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+.app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--robinhood-white);
+    padding-bottom: 88px; /* Bottom nav space */
+}
+
+/* Header - Robinhood Style */
+.header {
+    background: var(--robinhood-white);
+    border-bottom: 1px solid var(--robinhood-gray);
+    padding: var(--space-md) var(--space-lg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header h1 {
+    font-size: var(--font-size-xlarge);
+    font-weight: 700;
+    color: var(--robinhood-green);
+    letter-spacing: -0.02em;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.settings-btn {
+    background: var(--robinhood-gray-light);
+    border: none;
+    color: var(--robinhood-black);
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-large);
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-btn:hover {
+    background: var(--robinhood-gray);
+    transform: scale(1.05);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: var(--space-lg);
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--robinhood-white);
+}
+
+/* Bottom Navigation - Robinhood Style */
+.bottom-nav {
+    display: flex;
+    background: var(--robinhood-white);
+    border-top: 1px solid var(--robinhood-gray);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: var(--space-sm) 0;
+}
+
+.nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-sm);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--robinhood-gray-dark);
+    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    margin: 0 var(--space-xs);
+}
+
+.nav-item.active {
+    color: var(--robinhood-green);
+    background: rgba(0, 200, 5, 0.1);
+}
+
+.nav-item:hover {
+    color: var(--robinhood-black);
+    background: var(--robinhood-gray-light);
+}
+
+.nav-item div {
+    font-size: var(--font-size-large);
+    margin-bottom: var(--space-xs);
+}
+
+.nav-item span {
+    font-size: var(--font-size-tiny);
+    font-weight: 600;
+}
+
+/* Dashboard - Robinhood Portfolio Style */
+.dashboard {
+    padding-bottom: var(--space-3xl);
+}
+
+.dashboard h2 {
+    margin-bottom: var(--space-xl);
+    color: var(--robinhood-black);
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Portfolio Value Card - Robinhood Style */
+.portfolio-summary {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    text-align: center;
+}
+
+.portfolio-value {
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    color: var(--robinhood-black);
+    margin-bottom: var(--space-sm);
+    letter-spacing: -0.02em;
+}
+
+.portfolio-change {
+    font-size: var(--font-size-large);
+    font-weight: 600;
+}
+
+.portfolio-change.positive {
+    color: var(--robinhood-green);
+}
+
+.portfolio-change.negative {
+    color: var(--robinhood-red);
+}
+
+/* Stock List - Robinhood Card Style */
+.stock-list {
+    display: grid;
+    gap: var(--space-md);
+}
+
+.stock-card {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.stock-card:hover {
+    border-color: var(--robinhood-green);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.stock-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--robinhood-green);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.stock-card:hover::before {
+    opacity: 1;
+}
+
+.stock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-md);
+}
+
+.stock-symbol {
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    color: var(--robinhood-black);
+    letter-spacing: -0.01em;
+}
+
+.stock-price {
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    color: var(--robinhood-black);
+    text-align: right;
+}
+
+.stock-change {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.stock-change.positive {
+    color: var(--robinhood-green);
+}
+
+.stock-change.negative {
+    color: var(--robinhood-red);
+}
+
+.stock-change::before {
+    content: '';
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+}
+
+.stock-change.positive::before {
+    border-bottom: 6px solid var(--robinhood-green);
+}
+
+.stock-change.negative::before {
+    border-top: 6px solid var(--robinhood-red);
+}
+
+/* Portfolio */
+.portfolio {
+    padding-bottom: var(--space-3xl);
+}
+
+.portfolio h2 {
+    margin-bottom: var(--space-xl);
+    color: var(--robinhood-black);
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.holdings-list {
+    display: grid;
+    gap: var(--space-md);
+}
+
+.holding-card {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.holding-card:hover {
+    border-color: var(--robinhood-green);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.holding-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--robinhood-green);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.holding-card:hover::before {
+    opacity: 1;
+}
+
+.holding-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.holding-symbol {
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    color: var(--robinhood-black);
+    letter-spacing: -0.01em;
+}
+
+.holding-value {
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    color: var(--robinhood-black);
+}
+
+.holding-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-small);
+    color: var(--robinhood-gray-dark);
+}
+
+.holding-gain-loss {
+    font-weight: 600;
+}
+
+.holding-gain-loss.positive {
+    color: var(--robinhood-green);
+}
+
+.holding-gain-loss.negative {
+    color: var(--robinhood-red);
+}
+
+/* Trading - Robinhood One-Button Style */
+.trading {
+    padding-bottom: var(--space-3xl);
+}
+
+.trading h2 {
+    color: var(--robinhood-black);
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    margin-bottom: var(--space-xl);
+    letter-spacing: -0.02em;
+}
+
+/* Stock Detail Header */
+.stock-detail-header {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    text-align: center;
+}
+
+.stock-detail-symbol {
+    font-size: var(--font-size-xlarge);
+    font-weight: 700;
+    color: var(--robinhood-black);
+    margin-bottom: var(--space-sm);
+    letter-spacing: -0.01em;
+}
+
+.stock-detail-price {
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    color: var(--robinhood-black);
+    margin-bottom: var(--space-sm);
+    letter-spacing: -0.02em;
+}
+
+.stock-detail-change {
+    font-size: var(--font-size-large);
+    font-weight: 600;
+}
+
+.stock-detail-change.positive {
+    color: var(--robinhood-green);
+}
+
+.stock-detail-change.negative {
+    color: var(--robinhood-red);
+}
+
+/* Robinhood One-Button Trading */
+.trading-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.buy-button,
+.sell-button {
+    padding: var(--space-xl);
+    border: none;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+    overflow: hidden;
+}
+
+.buy-button {
+    background: var(--robinhood-green);
+    color: var(--robinhood-white);
+}
+
+.buy-button:hover {
+    background: var(--robinhood-green-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.sell-button {
+    background: var(--robinhood-red);
+    color: var(--robinhood-white);
+}
+
+.sell-button:hover {
+    background: var(--robinhood-red-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Amount Input - Robinhood Style */
+.amount-input-section {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.amount-input-section h3 {
+    font-size: var(--font-size-large);
+    font-weight: 600;
+    color: var(--robinhood-black);
+    margin-bottom: var(--space-md);
+    text-align: center;
+}
+
+.amount-input {
+    width: 100%;
+    padding: var(--space-lg);
+    border: 2px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-xlarge);
+    font-weight: 600;
+    text-align: center;
+    background: var(--robinhood-gray-light);
+    color: var(--robinhood-black);
+    transition: all 0.2s ease;
+}
+
+.amount-input:focus {
+    outline: none;
+    border-color: var(--robinhood-green);
+    background: var(--robinhood-white);
+}
+
+.amount-input::placeholder {
+    color: var(--robinhood-gray-dark);
+    font-weight: 400;
+}
+
+/* Quick Amount Buttons */
+.quick-amounts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.quick-amount-btn {
+    padding: var(--space-md);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-md);
+    background: var(--robinhood-white);
+    color: var(--robinhood-black);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-amount-btn:hover {
+    border-color: var(--robinhood-green);
+    background: rgba(0, 200, 5, 0.1);
+}
+
+/* News */
+.news {
+    padding-bottom: var(--space-3xl);
+}
+
+.news h2 {
+    margin-bottom: var(--space-xl);
+    color: var(--robinhood-black);
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.news-list {
+    display: grid;
+    gap: var(--space-md);
+}
+
+.news-card {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.news-card:hover {
+    border-color: var(--robinhood-blue);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.news-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--robinhood-blue);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.news-card:hover::before {
+    opacity: 1;
+}
+
+.news-title {
+    font-size: var(--font-size-large);
+    font-weight: 600;
+    color: var(--robinhood-black);
+    margin-bottom: var(--space-sm);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+.news-summary {
+    font-size: var(--font-size-base);
+    color: var(--robinhood-gray-dark);
+    margin-bottom: var(--space-md);
+    line-height: 1.5;
+}
+
+.news-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-small);
+    color: var(--robinhood-gray-dark);
+}
+
+.news-source {
+    font-weight: 600;
+    color: var(--robinhood-blue);
+}
+
+/* Settings */
+.settings {
+    padding-bottom: var(--space-3xl);
+}
+
+.settings h2 {
+    margin-bottom: var(--space-xl);
+    color: var(--robinhood-black);
+    font-size: var(--font-size-massive);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.settings-content {
+    background: var(--robinhood-white);
+    border: 1px solid var(--robinhood-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+}
+
+.settings-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-lg) 0;
+    border-bottom: 1px solid var(--robinhood-gray);
+}
+
+.settings-item:last-child {
+    border-bottom: none;
+}
+
+.settings-label {
+    color: var(--robinhood-black);
+    font-weight: 500;
+    font-size: var(--font-size-base);
+}
+
+.settings-value {
+    color: var(--robinhood-gray-dark);
+    font-size: var(--font-size-small);
+}
+
+/* Confetti Animation - Robinhood Style */
+@keyframes confetti {
+    0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+.confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--robinhood-green);
+    animation: confetti 3s linear infinite;
+    z-index: 9999;
+}
+
+.confetti:nth-child(2n) { background: var(--robinhood-blue); }
+.confetti:nth-child(3n) { background: var(--robinhood-purple); }
+.confetti:nth-child(4n) { background: var(--robinhood-red); }
+
+/* Loading Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header {
+        padding: var(--space-md);
+    }
+    
+    .main-content {
+        padding: var(--space-md);
+    }
+    
+    .header h1 {
+        font-size: var(--font-size-large);
+    }
+    
+    .trading-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-amounts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .portfolio-value,
+    .stock-detail-price {
+        font-size: var(--font-size-huge);
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content {
+        flex-direction: column;
+        gap: var(--space-md);
+        align-items: flex-start;
+    }
+    
+    .nav-item span {
+        font-size: 0.7rem;
+    }
+    
+    .dashboard h2,
+    .portfolio h2,
+    .trading h2,
+    .news h2,
+    .settings h2 {
+        font-size: var(--font-size-huge);
+    }
+    
+    .portfolio-value,
+    .stock-detail-price {
+        font-size: var(--font-size-xlarge);
+    }
+}

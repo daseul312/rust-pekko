@@ -1,0 +1,108 @@
+[package]
+name = "pekko-ml4t-system"
+version = "0.1.0"
+edition = "2021"
+authors = ["ML4T Trading Team"]
+description = "Pekko-Rust 기반 ML4T Agentic AI 자동매매 시스템"
+license = "Apache-2.0"
+
+[dependencies]
+# Pekko Actor System
+pekko-actor = { path = "../pekko-actor" }
+pekko-persistence = { path = "../pekko-persistence", features = ["postgres"] }
+
+# Stock Trading
+stock = { path = "../stock" }
+
+# Async Runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error Handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.8"
+
+# HTTP Client
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+
+# WebSocket
+tokio-tungstenite = { version = "0.20", features = ["native-tls"] }
+futures-util = "0.3"
+
+# Random number generation
+rand = "0.8"
+rand_distr = "0.4"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono"] }
+
+# Environment Variables
+dotenv = "0.15"
+
+# Base64 encoding/decoding
+base64 = "0.21"
+
+# Regular expressions
+regex = "1.0"
+
+# URL encoding
+urlencoding = "2.1"
+
+# Math & Statistics
+ndarray = "0.15"
+statrs = "0.16"
+
+# Configuration
+config = "0.14"
+
+# Async traits for LLM clients
+async-trait = "0.1"
+
+# CoreDB (optional)
+coredb = { path = "../coredb", optional = true }
+
+# Testing
+#[dev-dependencies]
+tokio-test = "0.4"
+
+[features]
+default = ["functional_actors", "llm_integration"]
+functional_actors = []
+llm_integration = []
+coredb = ["dep:coredb"]
+
+[[example]]
+name = "functional_llm_analysis"
+path = "examples/functional_llm_analysis.rs"
+
+[[example]]
+name = "functional_multiplication_table"
+path = "examples/functional_multiplication_table.rs"
+
+[[example]]
+name = "grok_example"
+path = "examples/grok_example.rs"
+
+[[example]]
+name = "coredb_actor_example"
+path = "examples/coredb_actor_example.rs"
+required-features = ["coredb"]
+[[bin]]
+name = "news_cli"
+path = "src/bin/news_cli.rs"
+
+[[bin]]
+name = "stockpick_sync"
+path = "src/bin/stockpick_sync.rs"
+

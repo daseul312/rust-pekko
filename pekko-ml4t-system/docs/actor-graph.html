@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pekko-Rust Actor System Graph</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        .header p {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        #cy {
+            width: 100%;
+            height: calc(100vh - 180px);
+            background: rgba(0,0,0,0.2);
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .info-panel {
+            position: fixed;
+            right: 20px;
+            top: 100px;
+            width: 280px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 12px;
+            padding: 20px;
+            display: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .info-panel.active {
+            display: block;
+        }
+        .info-panel h3 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #4fc3f7;
+        }
+        .info-panel p {
+            font-size: 0.85em;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        .info-panel .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-top: 10px;
+        }
+        .controls {
+            position: fixed;
+            left: 20px;
+            bottom: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .controls button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+        .controls button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦀 Pekko-Rust Actor System</h1>
+        <p>뉴스 기반 자동 투자 시스템 아키텍처</p>
+    </div>
+    
+    <div id="cy"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff6b6b;"></div>
+            <span>Core Actor</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4ecdc4;"></div>
+            <span>Data Actor</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ffe66d;"></div>
+            <span>Analysis Actor</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #95e1d3;"></div>
+            <span>Trading Actor</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #a29bfe;"></div>
+            <span>Infrastructure</span>
+        </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <h3 id="infoTitle">Actor Info</h3>
+        <p id="infoDesc"></p>
+        <div class="badge" id="infoBadge" style="background: #4fc3f7;"></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="cy.fit()">🔍 Fit View</button>
+        <button onclick="cy.reset()">↩️ Reset</button>
+        <button onclick="runLayout('circle')">⭕ Circle</button>
+        <button onclick="runLayout('grid')">📊 Grid</button>
+        <button onclick="runLayout('cose')">🌐 Force</button>
+    </div>
+
+    <script>
+        const actorData = {
+            nodes: [
+                // Core System
+                { id: 'system', label: 'ActorSystem', type: 'infrastructure', 
+                  desc: 'Actor 시스템의 핵심. 모든 Actor의 생명주기를 관리하고 메시지 라우팅을 담당합니다.' },
+                
+                // Data Collection Layer
+                { id: 'news_collector', label: 'NewsCollector\nActor', type: 'data',
+                  desc: 'NewsAPI, Alpha Vantage, Finnhub 등에서 실시간 뉴스를 수집합니다. 주기적 수집 및 캐싱 지원.' },
+                { id: 'data_agent', label: 'DataAgent', type: 'data',
+                  desc: '시장 데이터, 대안 데이터를 수집하고 관리합니다. 가격, 거래량 등 시계열 데이터 처리.' },
+                
+                // Analysis Layer
+                { id: 'news_analyzer', label: 'NewsAnalyzer\nActor', type: 'analysis',
+                  desc: '키워드 기반 감성 분석, 종목별 뉴스 스코어 계산, 투자 신호 생성. 50+ 금융 키워드 사전 내장.' },
+                { id: 'ml_agent', label: 'MLAgent', type: 'analysis',
+                  desc: '머신러닝 기반 예측. 기술적 지표, 알파 팩터, 펀더멘털 분석을 통한 앙상블 예측.' },
+                { id: 'sentiment_actor', label: 'SentimentActor', type: 'analysis',
+                  desc: '소셜 미디어, 뉴스 감성 분석. 시간대별 감성 추이 추적.' },
+                { id: 'prediction_actor', label: 'PredictionActor', type: 'analysis',
+                  desc: '가격 예측 및 투자 의견 생성. LLM 연동으로 자연어 기반 분석 리포트 작성.' },
+                
+                // Trading Layer
+                { id: 'persistent_trading', label: 'Persistent\nTradingAgent', type: 'trading',
+                  desc: 'Event Sourcing 기반 거래 실행. PostgreSQL에 모든 거래 이벤트 저장, 자동 복구 지원.' },
+                { id: 'trading_agent', label: 'TradingAgent', type: 'trading',
+                  desc: '주문 실행, 포지션 관리. 매수/매도 로직 처리.' },
+                { id: 'risk_agent', label: 'RiskAgent', type: 'trading',
+                  desc: '포트폴리오 리스크 관리. VaR 계산, 포지션 한도 체크, 손절/익절 관리.' },
+                
+                // Infrastructure
+                { id: 'monitoring', label: 'Monitoring\nAgent', type: 'infrastructure',
+                  desc: '시스템 모니터링, 성능 메트릭 수집, 알림 발송.' },
+                { id: 'postgres', label: 'PostgreSQL\n(Journal)', type: 'infrastructure',
+                  desc: 'Event Sourcing 저장소. 이벤트 저널 및 스냅샷 저장.' },
+                { id: 'llm_actor', label: 'LLMAnalysis\nActor', type: 'analysis',
+                  desc: 'OpenAI/Grok 연동. 시장 분석 리포트 및 투자 인사이트 생성.' },
+            ],
+            edges: [
+                // System connections
+                { source: 'system', target: 'news_collector', label: 'spawn' },
+                { source: 'system', target: 'news_analyzer', label: 'spawn' },
+                { source: 'system', target: 'persistent_trading', label: 'spawn' },
+                { source: 'system', target: 'data_agent', label: 'spawn' },
+                { source: 'system', target: 'ml_agent', label: 'spawn' },
+                { source: 'system', target: 'risk_agent', label: 'spawn' },
+                { source: 'system', target: 'monitoring', label: 'spawn' },
+                
+                // Data flow
+                { source: 'news_collector', target: 'news_analyzer', label: 'NewsArticle[]', type: 'data' },
+                { source: 'data_agent', target: 'ml_agent', label: 'MarketData', type: 'data' },
+                { source: 'data_agent', target: 'sentiment_actor', label: 'NewsData', type: 'data' },
+                
+                // Analysis flow
+                { source: 'news_analyzer', target: 'persistent_trading', label: 'TradingSignal', type: 'signal' },
+                { source: 'ml_agent', target: 'trading_agent', label: 'Prediction', type: 'signal' },
+                { source: 'sentiment_actor', target: 'prediction_actor', label: 'SentimentScore', type: 'data' },
+                { source: 'prediction_actor', target: 'persistent_trading', label: 'Signal', type: 'signal' },
+                { source: 'llm_actor', target: 'prediction_actor', label: 'Insight', type: 'data' },
+                
+                // Trading flow
+                { source: 'persistent_trading', target: 'postgres', label: 'Event/Snapshot', type: 'persist' },
+                { source: 'trading_agent', target: 'risk_agent', label: 'OrderRequest', type: 'signal' },
+                { source: 'risk_agent', target: 'trading_agent', label: 'Approved/Reject', type: 'signal' },
+                
+                // Monitoring
+                { source: 'persistent_trading', target: 'monitoring', label: 'Metrics', type: 'data' },
+                { source: 'risk_agent', target: 'monitoring', label: 'RiskAlert', type: 'signal' },
+            ]
+        };
+
+        const typeColors = {
+            'core': '#ff6b6b',
+            'data': '#4ecdc4',
+            'analysis': '#ffe66d',
+            'trading': '#95e1d3',
+            'infrastructure': '#a29bfe'
+        };
+
+        const edgeColors = {
+            'data': '#4ecdc4',
+            'signal': '#ff6b6b',
+            'persist': '#a29bfe',
+            'default': '#888'
+        };
+
+        const elements = {
+            nodes: actorData.nodes.map(n => ({
+                data: { 
+                    id: n.id, 
+                    label: n.label,
+                    desc: n.desc,
+                    type: n.type
+                },
+                style: {
+                    'background-color': typeColors[n.type] || '#666'
+                }
+            })),
+            edges: actorData.edges.map((e, i) => ({
+                data: { 
+                    id: `e${i}`, 
+                    source: e.source, 
+                    target: e.target,
+                    label: e.label
+                },
+                style: {
+                    'line-color': edgeColors[e.type] || edgeColors.default,
+                    'target-arrow-color': edgeColors[e.type] || edgeColors.default
+                }
+            }))
+        };
+
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-size': '11px',
+                        'font-weight': 'bold',
+                        'color': '#000',
+                        'text-wrap': 'wrap',
+                        'text-max-width': '80px',
+                        'width': 90,
+                        'height': 90,
+                        'border-width': 3,
+                        'border-color': '#fff',
+                        'text-outline-color': '#fff',
+                        'text-outline-width': 1
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'curve-style': 'bezier',
+                        'target-arrow-shape': 'triangle',
+                        'arrow-scale': 1.2,
+                        'label': 'data(label)',
+                        'font-size': '9px',
+                        'text-rotation': 'autorotate',
+                        'text-margin-y': -10,
+                        'color': '#ccc',
+                        'text-outline-color': '#1a1a2e',
+                        'text-outline-width': 2
+                    }
+                },
+                {
+                    selector: 'node:selected',
+                    style: {
+                        'border-width': 5,
+                        'border-color': '#fff',
+                        'box-shadow': '0 0 20px #fff'
+                    }
+                }
+            ],
+            layout: {
+                name: 'cose',
+                idealEdgeLength: 150,
+                nodeOverlap: 30,
+                refresh: 20,
+                fit: true,
+                padding: 50,
+                randomize: false,
+                componentSpacing: 100,
+                nodeRepulsion: 8000,
+                edgeElasticity: 100,
+                nestingFactor: 5,
+                gravity: 80,
+                numIter: 1000,
+                initialTemp: 200,
+                coolingFactor: 0.95,
+                minTemp: 1.0
+            }
+        });
+
+        // Click handler for info panel
+        cy.on('tap', 'node', function(evt) {
+            const node = evt.target;
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('infoTitle');
+            const desc = document.getElementById('infoDesc');
+            const badge = document.getElementById('infoBadge');
+            
+            title.textContent = node.data('label').replace('\n', ' ');
+            desc.textContent = node.data('desc');
+            badge.textContent = node.data('type').toUpperCase();
+            badge.style.background = typeColors[node.data('type')];
+            badge.style.color = node.data('type') === 'analysis' ? '#000' : '#fff';
+            
+            panel.classList.add('active');
+        });
+
+        cy.on('tap', function(evt) {
+            if (evt.target === cy) {
+                document.getElementById('infoPanel').classList.remove('active');
+            }
+        });
+
+        function runLayout(name) {
+            cy.layout({
+                name: name,
+                fit: true,
+                padding: 50,
+                animate: true,
+                animationDuration: 500
+            }).run();
+        }
+
+        // Initial fit
+        cy.fit(50);
+    </script>
+</body>
+</html>
